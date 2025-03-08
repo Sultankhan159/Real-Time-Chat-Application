@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat App</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+</head>
+<body>
+    <h2>Chat Application</h2>
+    <div id="chat"></div>
+    <input type="text" id="message" placeholder="Type a message...">
+    <button onclick="sendMessage()">Send</button>
+
+    <script>
+        var stompClient = null;
+        function connect() {
+            var socket = new SockJS('/chat');
+            stompClient = Stomp.over(socket);
+            stompClient.connect({}, function(frame) {
+                console.log('Connected: ' + frame);
+                stompClient.subscribe('/topic/messages', function(response) {
+                    var message = JSON.parse(response.body);
+                    document.getElementById("chat").innerHTML += `<p><b>${message.sender}:</b> ${message.content} <i>${message.timestamp}</i></p>`;
+                });
+            });
+        }
+        function sendMessage() {
+            var msgContent = document.getElementById("message").value;
+            var chatMessage = { sender: "User", content: msgContent };
+            stompClient.send("/app/sendMessage", {}, JSON.stringify(chatMessage));
+            document.getElementById("message").value = "";
+        }
+        connect();
+    </script>
+</body>
+</html>
